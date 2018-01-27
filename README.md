@@ -1,1 +1,3 @@
-# fullstack-osa2
+# Fullstack webpalvelinohjelmointi
+
+Osa 2 Tehtävät
