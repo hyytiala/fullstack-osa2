@@ -1,11 +1,12 @@
 import React from 'react'
-import axios from 'axios'
+import personService from './services/persons'
 
-const Person = ({ person }) => {
+const Person = ({ person, deletePerson }) => {
     return (
         <tr>
             <td>{person.name}</td>
             <td>{person.number}</td>
+            <td><button onClick={deletePerson}>Poista</button></td>
         </tr>
     )
 }
@@ -22,16 +23,6 @@ const Button = () => (
     </div>
 )
 
-const Numerot = ({ persons }) => {
-    return (
-        <table>
-            <tbody>
-                {persons.map(person => <Person key={person.name} person={person} />)}
-            </tbody>
-        </table>
-    )
-}
-
 class App extends React.Component {
     constructor(props) {
         super(props)
@@ -44,12 +35,12 @@ class App extends React.Component {
     }
 
     componentDidMount() {
-        axios
-          .get('http://localhost:3001/persons')
-          .then(response => {
-            this.setState({ persons: response.data })
-          })
-      }
+        personService
+            .getAll()
+            .then(persons => {
+                this.setState({ persons })
+            })
+    }
 
     addPerson = (event) => {
         event.preventDefault()
@@ -58,12 +49,15 @@ class App extends React.Component {
             number: this.state.newNumber
         }
         if (!this.state.persons.find((person) => person.name === this.state.newName)) {
-            const persons = this.state.persons.concat(personObject)
-            this.setState({
-                persons,
-                newName: '',
-                newNumber: ''
-            })
+            personService
+                .create(personObject)
+                .then(newPerson => {
+                    this.setState({
+                        persons: this.state.persons.concat(newPerson),
+                        newName: '',
+                        newNumber: ''
+                    })
+                })
         } else {
             this.setState({
                 newName: '',
@@ -82,6 +76,17 @@ class App extends React.Component {
 
     handleInputChangeFilter = (event) => {
         this.setState({ filter: event.target.value })
+    }
+
+    removePerson = (id) => {
+        return () => {
+            personService
+                .remove(id)
+                .then(removedNote => {
+                    this.setState({ persons: this.state.persons.filter(n => n.id !== id) })
+                }
+                ) 
+        }
     }
 
     render() {
@@ -109,7 +114,11 @@ class App extends React.Component {
                     <Button />
                 </form>
                 <h2>Numerot</h2>
-                    <Numerot persons={toShow}/>
+                <table>
+                    <tbody>
+                        {toShow.map(person => <Person key={person.name} person={person} deletePerson={this.removePerson(person.id)} />)}
+                    </tbody>
+                </table>
             </div>
         )
     }
