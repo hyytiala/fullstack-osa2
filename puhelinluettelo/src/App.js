@@ -23,6 +23,17 @@ const Button = () => (
     </div>
 )
 
+const Notification = ({ message }) => {
+    if (message === null) {
+        return null
+    }
+    return (
+        <div className="error">
+            {message}
+        </div>
+    )
+}
+
 class App extends React.Component {
     constructor(props) {
         super(props)
@@ -30,7 +41,8 @@ class App extends React.Component {
             persons: [],
             newName: '',
             newNumber: '',
-            filter: ''
+            filter: '',
+            error: null
         }
     }
 
@@ -48,25 +60,52 @@ class App extends React.Component {
             name: this.state.newName,
             number: this.state.newNumber
         }
-        if (!this.state.persons.find((person) => person.name === this.state.newName)) {
+        if (!this.state.persons.find((person) => person.name === this.state.newName))
             personService
                 .create(personObject)
                 .then(newPerson => {
                     this.setState({
                         persons: this.state.persons.concat(newPerson),
                         newName: '',
-                        newNumber: ''
+                        newNumber: '',
+                        error: `Lisättiin ${personObject.name}`
                     })
+                    setTimeout(() => {
+                        this.setState({ error: null })
+                    }, 2000)
                 })
-        } else {
-            this.setState({
-                newName: '',
-                newNumber: ''
-            })
-        }
+        else
+            if (window.confirm(`${personObject.name} on jo luettelossa. Päivitetäänkö numero?`)) {
+                const person = this.state.persons.find((person) => person.name === this.state.newName)
+                const id = person.id
+                const changedPerson = { ...person, number: this.state.newNumber }
+                personService
+                    .update(id, changedPerson)
+                    .then(changedPerson => {
+                        const persons = this.state.persons.filter(p => p.id !== id)
+                        this.setState({
+                            persons: persons.concat(changedPerson),
+                            newName: '',
+                            newNumber: '',
+                            error: `Päivitettiin ${personObject.name}`
+                        })
+                        setTimeout(() => {
+                            this.setState({ error: null })
+                        }, 2000)
+                    })
+                    .catch(error => {
+                        this.setState({
+                          error: `Henkilö on poistettu muualla, päivitä sivu!`
+                        })
+                        setTimeout(() => {
+                          this.setState({error: null})
+                        }, 5000)
+                      })
+            }
+
     }
 
-    handleInputChangeName = (event, key) => {
+    handleInputChangeName = (event) => {
         this.setState({ newName: event.target.value })
     }
 
@@ -79,27 +118,37 @@ class App extends React.Component {
     }
 
     removePerson = (id) => {
+        const person = this.state.persons.find(p => p.id === id)
         return () => {
-            personService
-                .remove(id)
-                .then(removedNote => {
-                    this.setState({ persons: this.state.persons.filter(n => n.id !== id) })
-                }
-                ) 
+            if (window.confirm(`Poistetaanko ${person.name}?`))
+                personService
+                    .remove(id)
+                    .then(removedNote => {
+                        this.setState({
+                            persons: this.state.persons.filter(p => p.id !== id),
+                            error: `Poistettiin ${person.name}`
+                        })
+                        setTimeout(() => {
+                            this.setState({ error: null })
+                        }, 2000)
+                    }
+                    )
         }
     }
 
     render() {
-        const toShow = this.state.persons.filter(person => person.name.toLowerCase().includes(this.state.filter))
+        const toShow = this.state.persons.filter(person => person.name.toLowerCase().includes(this.state.filter.toLowerCase()))
         return (
             <div>
                 <h2>Puhelinluettelo</h2>
+                <Notification message={this.state.error} />
                 <Field
                     text="Rajaa näytettäviä: "
                     value={this.state.filter}
                     change={this.handleInputChangeFilter}
                 />
-                <h2>Lisää uusi</h2>
+                <h2>Lisää uusi tai päivitä olemassa olevaa
+                </h2>
                 <form onSubmit={this.addPerson}>
                     <Field
                         text="nimi: "
