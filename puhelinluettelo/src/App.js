@@ -65,7 +65,7 @@ class App extends React.Component {
                 .create(personObject)
                 .then(newPerson => {
                     this.setState({
-                        persons: this.state.persons.concat(newPerson),
+                        persons: this.state.persons.filter(p=>p.id!==personObject.id).concat(personObject),
                         newName: '',
                         newNumber: '',
                         error: `Lisättiin ${personObject.name}`
@@ -79,6 +79,7 @@ class App extends React.Component {
                 const person = this.state.persons.find((person) => person.name === this.state.newName)
                 const id = person.id
                 const changedPerson = { ...person, number: this.state.newNumber }
+                console.log(id)
                 personService
                     .update(id, changedPerson)
                     .then(changedPerson => {
