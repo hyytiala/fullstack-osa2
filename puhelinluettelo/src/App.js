@@ -65,7 +65,7 @@ class App extends React.Component {
                 .create(personObject)
                 .then(newPerson => {
                     this.setState({
-                        persons: this.state.persons.filter(p=>p.id!==personObject.id).concat(personObject),
+                        persons: this.state.persons.concat(newPerson),
                         newName: '',
                         newNumber: '',
                         error: `Lisättiin ${personObject.name}`
